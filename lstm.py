@@ -83,6 +83,7 @@ def main(argv):
             test_data.load()
 
             model = CaptionGenerator(args, 'test')
+            sess.run(tf.global_variables_initializer())
 
             # model.build(test_data.num_words, 
             #             test_data.word2vec, 
