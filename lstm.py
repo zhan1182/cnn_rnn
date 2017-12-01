@@ -26,7 +26,8 @@ def main(argv):
 
     parser.add_argument('--images_dir', default='./train/images/', help='Directory containing the COCO train2014 images')
     parser.add_argument('--caption_file', default='./train/captions_train2014.json', help='JSON file storing the captions for COCO train2014 images')
-    
+    parser.add_argument('--test_result_file', default='./results.json', help='File to store the testing results')
+
     parser.add_argument('--word_table_file', default='./word_table.pickle', help='Temporary file to store the word table')
     parser.add_argument('--max_sent_len', type=int, default=30, help='Maximum length of the generated caption')
 
