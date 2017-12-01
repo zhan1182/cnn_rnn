@@ -82,7 +82,12 @@ def main(argv):
                                 save_file=args.word_table_file)
             test_data.load()
 
-            model = CaptionGenerator(args, 'test')          
+            model = CaptionGenerator(args, 'test')
+
+            model.build(test_data.num_words, 
+                        test_data.word2vec, 
+                        test_data.idx2word)
+
             model.load(sess)
 
             model.test(sess, test_data)
