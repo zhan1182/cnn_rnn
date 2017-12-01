@@ -150,7 +150,7 @@ class DataSet(object):
         for idx, word in enumerate(self.idx2word):
             self.word2idx[word] = idx
 
-        if not os.path.exists(save_file):
+        if not os.path.exists(self.save_file):
             pickle.dump([self.idx2word, self.word2idx, self.word2vec, self.num_words], 
                 open(self.save_file, 'wb'))
 

@@ -20,11 +20,9 @@ class BaseModel(object):
 
         self.img_shape = [224, 224, 3]
 
-        self.class_balancing_factor = params.class_balancing_factor
         self.save_dir = os.path.join(params.save_dir, self.cnn_model+'/')
 
         self.global_step = tf.Variable(0, name = 'global_step', trainable = False)
-        self.build()
         self.saver = tf.train.Saver(max_to_keep = 100)
 
     def build(self):
@@ -74,16 +72,14 @@ class BaseModel(object):
         """ Test the model. """
         print("Testing the model ...")
         result_file = self.params.test_result_file
-        captions = []
-        image_files = []
+
+        imagefile_caption = {}
 
         # Generate the captions for the images
         for k in tqdm(list(range(test_data.num_images))):
             batch = test_data.next_batch()
             img_files, imgs = batch
             img_file = img_files[0]
-
-            print(img_file, test_data.current_index, len(test_data.ids), test_data.batch_size)
 
             if self.train_cnn:
                 feed_dict = self.get_feed_dict(batch, is_train=False)
@@ -97,23 +93,11 @@ class BaseModel(object):
 
             result = sess.run(self.results, feed_dict=feed_dict)
             sentence = test_data.indices_to_sent(result.squeeze())
+
+            imagefile_caption[img_file] = sentence
             
-            captions.append(sentence)
-            image_files.append(img_file)
-
-        # print(captions)
-        # for cap in captions:
-        #     print(cap)
-        # print('XXXXXX')
-        # print(img_files)
-
-        # Save the captions to a file
-        # results = pd.DataFrame({'image_files':image_files, 'caption':captions})
-        # results.to_csv(result_file)
-        
         with open(result_file, 'w') as fw:
-            for img_file, caption in zip(image_files, captions):
-                fw.write(img_file + ', ' + caption.encode('utf-8'))
+            json.dump(imagefile_caption, fw)
 
         print("Testing complete.")
 
@@ -157,10 +141,10 @@ class BaseModel(object):
 
 
 class CaptionGenerator(BaseModel):
-    def build(self):
+    def build(self, num_words, word2vec, idx2word):
         """ Build the model. """
         self.build_cnn()
-        self.build_rnn()
+        self.build_rnn(num_words, word2vec, idx2word)
 
     def build_cnn(self):
         """ Build the CNN. """
@@ -314,7 +298,7 @@ class CaptionGenerator(BaseModel):
         self.imgs = imgs
         self.is_train = is_train
         
-    def build_rnn(self):
+    def build_rnn(self, num_words, word2vec, idx2word):
         """ Build the RNN. """
         print("Building the RNN part...")
 
@@ -324,10 +308,6 @@ class CaptionGenerator(BaseModel):
         batch_size = self.batch_size
         num_ctx = self.conv_feat_shape[0]
         dim_ctx = self.conv_feat_shape[1]
-
-        num_words = params.num_words
-        word2vec = params.word2vec
-        idx2word = params.idx2word
 
         max_sent_len = params.max_sent_len
         num_lstm = params.num_lstm

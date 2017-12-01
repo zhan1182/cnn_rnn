@@ -5,6 +5,8 @@ from __future__ import print_function
 import sys
 import os
 import pickle
+import argparse
+
 import tensorflow as tf
 import numpy as np
 
@@ -62,6 +64,10 @@ def main(argv):
             train_data.reset()
 
             model = CaptionGenerator(args, 'train')
+            model.build(train_data.num_words, 
+                        train_data.word2vec, 
+                        train_data.idx2word)
+
             sess.run(tf.global_variables_initializer())
     
             if args.load:
@@ -71,7 +77,8 @@ def main(argv):
 
             model.train(sess, train_data)
         else: 
-            test_data = DataSet(images_dir=args.images_dir)
+            test_data = DataSet(images_dir=args.images_dir,
+                                save_file=args.word_table_file)
             test_data.load()
 
             model = CaptionGenerator(args, 'test')          
