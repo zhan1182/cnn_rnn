@@ -37,27 +37,42 @@ class BaseModel(object):
         params = self.params
         num_epochs = params.num_epochs
 
-        for epoch_no in tqdm(list(range(num_epochs)), desc='epoch'):
-            for idx in tqdm(list(range(train_data.num_batches)), desc='batch'):
+        merged = tf.summary.merge_all()
+        train_writer = tf.summary.FileWriter(params.logs_dir + '/train/', sess.graph)
+
+        for epoch_no in range(num_epochs):
+            for idx in range(train_data.num_batches):
                 batch = train_data.next_batch()
 
                 if self.train_cnn:
                     # Train CNN and RNN
                     feed_dict = self.get_feed_dict(batch, is_train=True)
-                    _, loss0, loss1, global_step = sess.run([self.opt_op, self.loss0, self.loss1, self.global_step], feed_dict=feed_dict)
-
+                    summary, _, loss0, loss1, global_step = sess.run([merged, 
+                                                                    self.opt_op, 
+                                                                    self.loss0, 
+                                                                    self.loss1, 
+                                                                    self.global_step], 
+                                                                    feed_dict=feed_dict)
+                    train_writer.add_summary(summary, idx)
                 else:
                     # Train RNN only
                     img_files, imgs, _, _ = batch
 
                     if self.init_lstm_with_fc_feats:
-                        contexts, feats = sess.run([self.conv_feats, self.fc_feats], feed_dict={self.imgs:imgs, self.is_train:False})
+                        contexts, feats = sess.run([self.conv_feats, self.fc_feats], 
+                                                    feed_dict={self.imgs:imgs, self.is_train:False})
                         feed_dict = self.get_feed_dict(batch, is_train=True, contexts=contexts, feats=feats)
                     else:
                         contexts = sess.run(self.conv_feats, feed_dict={self.imgs:imgs, self.is_train:False})
                         feed_dict = self.get_feed_dict(batch, is_train=True, contexts=contexts)
 
-                    _, loss0, loss1, global_step = sess.run([self.opt_op, self.loss0, self.loss1, self.global_step], feed_dict=feed_dict)
+                    summary, _, loss0, loss1, global_step = sess.run([merged, 
+                                                                    self.opt_op, 
+                                                                    self.loss0, 
+                                                                    self.loss1, 
+                                                                    self.global_step], 
+                                                                    feed_dict=feed_dict)
+                    train_writer.add_summary(summary, idx)
 
                 print(" Loss0=%f Loss1=%f" %(loss0, loss1))
 
@@ -504,6 +519,10 @@ class CaptionGenerator(BaseModel):
 
         self.results = results
         self.scores = scores
+
+        tf.summary.scalar('loss', loss)
+        tf.summary.scalar('loss0', loss0)
+        tf.summary.scalar('loss1', loss1)
 
         print("RNN part built.")
 

@@ -48,6 +48,7 @@ class DataSet(object):
         self.current_index = 0
         self.ids = list(range(instance_id))
 
+        # self.num_batches = 5
         self.num_batches = int(len(self.ids) / self.batch_size)
 
 

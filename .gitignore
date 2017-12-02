@@ -112,7 +112,8 @@ checkpoint
 # json output
 *.json
 
-
+# Tensorflow events
+events.out*
 
 
 

@@ -27,6 +27,7 @@ def main(argv):
     parser.add_argument('--images_dir', default='./train/images/', help='Directory containing the COCO train2014 images')
     parser.add_argument('--caption_file', default='./train/captions_train2014.json', help='JSON file storing the captions for COCO train2014 images')
     parser.add_argument('--test_result_file', default='./results.json', help='File to store the testing results')
+    parser.add_argument('--logs_dir', default='./logs', help='Directory containing tensorboard logs')
 
     parser.add_argument('--word_table_file', default='./word_table.pickle', help='Temporary file to store the word table')
     parser.add_argument('--max_sent_len', type=int, default=30, help='Maximum length of the generated caption')
@@ -35,7 +36,7 @@ def main(argv):
     parser.add_argument('--save_period', type=int, default=2000, help='Period to save the trained model')
     
     parser.add_argument('--solver', default='adam', help='Optimizer to use: Can be adam, momentum, rmsprop or sgd') 
-    parser.add_argument('--num_epochs', type=int, default=10, help='Number of training epochs')
+    parser.add_argument('--num_epochs', type=int, default=1, help='Number of training epochs')
     parser.add_argument('--batch_size', type=int, default=64, help='Batch size')
     parser.add_argument('--learning_rate', type=float, default=1e-3, help='Learning rate')
     parser.add_argument('--weight_decay', type=float, default=5e-4, help='Weight decay')
