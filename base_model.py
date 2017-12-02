@@ -490,7 +490,7 @@ class CaptionGenerator(BaseModel):
                 loss1 = params.weight_decay * (tf.add_n(tf.get_collection('l2_0')) + tf.add_n(tf.get_collection('l2_1')))
             else:
                 loss1 = params.weight_decay * tf.add_n(tf.get_collection('l2_1'))
-            loss = loss0 + 0.01 * loss1
+            loss = loss0 + loss1
 
         # Build the solver
         if params.solver == 'adam':
