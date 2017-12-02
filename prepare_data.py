@@ -84,30 +84,30 @@ class DataSet(object):
 
         images = np.array(images, dtype=np.float32)
 
-        if self.is_train:
-            caption_vectors = []
-            masks = []
-
-            for idx in batch_ids:
-                instance = self.idx_imagefile_caption[idx]
-
-                # Convert the caption into an array of indices in word table
-                caption = instance['caption']
-                word_indices = np.zeros(self.max_sent_len).astype(np.int32)
-                mask = np.zeros(self.max_sent_len)
-                words = np.array([self.word2idx[w] for w in caption])
-                word_indices[:len(words)] = words
-                mask[:len(words)] = 1.0
-
-                caption_vectors.append(word_indices)
-                masks.append(mask)
-    
-            caption_vectors = np.array(caption_vectors)
-            masks = np.array(masks)
-
-            return image_file_names, images, caption_vectors, masks
-        else:
+        if not self.is_train:
             return image_file_names, images
+
+        caption_vectors = []
+        masks = []
+
+        for idx in batch_ids:
+            instance = self.idx_imagefile_caption[idx]
+
+            # Convert the caption into an array of indices in word table
+            caption = instance['caption']
+            word_indices = np.zeros(self.max_sent_len).astype(np.int32)
+            mask = np.zeros(self.max_sent_len)
+            words = np.array([self.word2idx[w] for w in caption])
+            word_indices[:len(words)] = words
+            mask[:len(words)] = 1.0
+
+            caption_vectors.append(word_indices)
+            masks.append(mask)
+
+        caption_vectors = np.array(caption_vectors)
+        masks = np.array(masks)
+
+        return image_file_names, images, caption_vectors, masks
 
 
     def reset(self):
