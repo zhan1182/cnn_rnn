@@ -48,7 +48,6 @@ class DataSet(object):
         self.current_index = 0
         self.ids = list(range(instance_id))
 
-        # self.num_batches = 5
         self.num_batches = int(len(self.ids) / self.batch_size)
 
 
@@ -78,6 +77,9 @@ class DataSet(object):
             img = temp.swapaxes(0, 2)
 
             img = cv2.resize(img, (self.scale_shape[0], self.scale_shape[1]))
+
+            img -= np.array([121.29502776, 113.9715251 , 106.10755275])
+
             images.append(img)
 
         images = np.array(images, dtype=np.float32)
