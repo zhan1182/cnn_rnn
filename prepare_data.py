@@ -78,7 +78,7 @@ class DataSet(object):
 
             img = cv2.resize(img, (self.scale_shape[0], self.scale_shape[1]))
 
-            img -= np.array([121.29502776, 113.9715251 , 106.10755275])
+            img = img.astype(np.float32) - np.array([121.29502776, 113.9715251 , 106.10755275])
 
             images.append(img)
 
