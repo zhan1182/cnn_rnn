@@ -43,13 +43,12 @@ class DataSet(object):
                 self.idx_imagefile[instance_id] = image_file.split(os.sep)[-1]
                 instance_id += 1
 
-            # self.num_images = len(image_files)
-            self.num_images = 3
+            self.num_images = len(image_files)
 
         self.current_index = 0
         self.ids = list(range(instance_id))
 
-        self.num_batches = 3
+        self.num_batches = int(len(self.ids) / self.batch_size)
 
 
     def next_batch(self):
