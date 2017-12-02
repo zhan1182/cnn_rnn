@@ -103,5 +103,17 @@ ENV/
 # Picke files
 *.pickle
 
+# Tensorflow checkpoints 
+*.index
+*.meta
+checkpoint
+*.data*
+
+
+
+
+
+
+
 
 
