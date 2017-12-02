@@ -144,7 +144,7 @@ class DataSet(object):
             for word in caption:
                 if word not in self.word2vec:
                     # Why times 0.01 here??
-                    self.word2vec[word] = np.random.randn(self.dim_embed)
+                    self.word2vec[word] = 0.01 * np.random.randn(self.dim_embed)
 
         self.num_words = len(self.word2vec.keys())
         self.idx2word = sorted(self.word2vec.keys())
