@@ -154,6 +154,9 @@ class BaseModel(object):
                             raise
         print("%d variables loaded. %d variables missed." %(count, miss_count))
 
+    def load3(self, sess):
+        self.saver.restore(sess, "./models/resnet152/-16406.data-00000-of-00001")
+
 
 class CaptionGenerator(BaseModel):
     def build(self, num_words, word2vec, idx2word):

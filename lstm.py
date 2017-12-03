@@ -73,7 +73,9 @@ def main(argv):
             sess.run(tf.global_variables_initializer())
     
             if args.load:
-                model.load(sess)
+                # model.load(sess)
+                print("reload the entire model")
+                model.load3(sess)
             elif args.load_cnn_model:
                 model.load2(args.cnn_model_file, sess)
 
