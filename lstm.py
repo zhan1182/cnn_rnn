@@ -65,17 +65,16 @@ def main(argv):
             train_data.build_word_table(args.dim_embed)
             train_data.reset()
 
-            model = CaptionGenerator(args, 'train')
-            model.build(train_data.num_words, 
-                        train_data.word2vec, 
-                        train_data.idx2word)
+            model = CaptionGenerator(args, 
+                                    'train', 
+                                    train_data.num_words, 
+                                    train_data.word2vec, 
+                                    train_data.idx2word)
 
             sess.run(tf.global_variables_initializer())
     
             if args.load:
-                # model.load(sess)
-                print("reload the entire model")
-                model.load3(sess)
+                model.load(sess)
             elif args.load_cnn_model:
                 model.load2(args.cnn_model_file, sess)
 
@@ -85,11 +84,12 @@ def main(argv):
                                 save_file=args.word_table_file)
             test_data.load()
 
-            model = CaptionGenerator(args, 'test')
+            model = CaptionGenerator(args, 
+                                    'test', 
+                                    test_data.num_words, 
+                                    test_data.word2vec, 
+                                    test_data.idx2word)
 
-            model.build(test_data.num_words, 
-                        test_data.word2vec, 
-                        test_data.idx2word)
             sess.run(tf.global_variables_initializer())
 
             model.load(sess)

@@ -9,7 +9,7 @@ from tqdm import tqdm
 from nn import *
 
 class BaseModel(object):
-    def __init__(self, params, mode):
+    def __init__(self, params, mode, num_words, word2vec, idx2word):
         self.params = params
         self.mode = mode
         self.batch_size = params.batch_size if mode=='train' else 1
@@ -23,9 +23,12 @@ class BaseModel(object):
         self.save_dir = os.path.join(params.save_dir, self.cnn_model+'/')
 
         self.global_step = tf.Variable(0, name = 'global_step', trainable = False)
-        self.saver = tf.train.Saver(max_to_keep = 100)
 
-    def build(self):
+        self.build(num_words, word2vec, idx2word)
+
+        self.saver = tf.train.Saver(max_to_keep=100)
+
+    def build(self, num_words, word2vec, idx2word):
         raise NotImplementedError()
 
     def get_feed_dict(self, batch, is_train, contexts=None, feats=None):
@@ -77,7 +80,7 @@ class BaseModel(object):
                 print(" Loss0=%f Loss1=%f" %(loss0, loss1))
 
                 if (global_step + 1) % params.save_period == 0:
-                    self.save2(sess)
+                    self.save(sess)
 
         self.save(sess)
 
@@ -120,11 +123,7 @@ class BaseModel(object):
     def save(self, sess):
         """ Save the model. """
         print(("Saving model to %s" % self.save_dir))
-        self.saver.save(sess, self.save_dir, self.global_step)
-
-    def save2(self, sess):
-        print("Saving model!")
-        self.saver.save(sess, self.save_dir + '/model.ckpt')
+        self.saver.save(sess, self.save_dir + '/model.ckpt', self.global_step)
 
 
     def load(self, sess):
@@ -158,9 +157,6 @@ class BaseModel(object):
                         if not ignore_missing:
                             raise
         print("%d variables loaded. %d variables missed." %(count, miss_count))
-
-    def load3(self, sess):
-        self.saver.restore(sess, "./models/resnet152/model.ckpt")
 
 
 class CaptionGenerator(BaseModel):
