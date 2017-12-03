@@ -77,7 +77,7 @@ class BaseModel(object):
                 print(" Loss0=%f Loss1=%f" %(loss0, loss1))
 
                 if (global_step + 1) % params.save_period == 0:
-                    self.save(sess)
+                    self.save2(sess)
 
         self.save(sess)
 
@@ -122,6 +122,11 @@ class BaseModel(object):
         print(("Saving model to %s" % self.save_dir))
         self.saver.save(sess, self.save_dir, self.global_step)
 
+    def save2(self, sess):
+        print("Saving model!")
+        self.saver.save(sess, self.save_dir + '/model.ckpt')
+
+
     def load(self, sess):
         """ Load the model. """
         print("Loading model...")
@@ -155,7 +160,7 @@ class BaseModel(object):
         print("%d variables loaded. %d variables missed." %(count, miss_count))
 
     def load3(self, sess):
-        self.saver.restore(sess, "./models/resnet152/-16406.data-00000-of-00001")
+        self.saver.restore(sess, "./models/resnet152/model.ckpt")
 
 
 class CaptionGenerator(BaseModel):
