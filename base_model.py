@@ -112,6 +112,8 @@ class BaseModel(object):
             result = sess.run(self.results, feed_dict=feed_dict)
             sentence = test_data.indices_to_sent(result.squeeze())
 
+            print(sentence)
+
             imagefile_caption[img_file] = sentence
             
         with open(result_file, 'w') as fw:
