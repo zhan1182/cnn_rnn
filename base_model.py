@@ -24,11 +24,15 @@ class BaseModel(object):
 
         self.global_step = tf.Variable(0, name = 'global_step', trainable = False)
 
-        self.build(num_words, word2vec, idx2word)
+        self.num_words = num_words
+        self.word2vec = word2vec
+        self.idx2word = idx2word
+
+        self.build()
 
         self.saver = tf.train.Saver(max_to_keep=100)
 
-    def build(self, num_words, word2vec, idx2word):
+    def build(self):
         raise NotImplementedError()
 
     def get_feed_dict(self, batch, is_train, contexts=None, feats=None):
@@ -77,7 +81,7 @@ class BaseModel(object):
                                                                     feed_dict=feed_dict)
                     train_writer.add_summary(summary, idx)
 
-                print(" Loss0=%f Loss1=%f" %(loss0, loss1))
+                print(" Loss0=%f Loss1=%f Batch=%d" %(loss0, loss1, idx))
 
                 if (global_step + 1) % params.save_period == 0:
                     self.save(sess)
@@ -114,7 +118,7 @@ class BaseModel(object):
 
             imagefile_caption[img_file] = sentence
             
-        with open(result_file, 'w') as fw:
+        with open(result_file, 'wb') as fw:
             json.dump(imagefile_caption, fw)
 
         print("Testing complete.")
@@ -160,92 +164,19 @@ class BaseModel(object):
 
 
 class CaptionGenerator(BaseModel):
-    def build(self, num_words, word2vec, idx2word):
+    def build(self):
         """ Build the model. """
         self.build_cnn()
-        self.build_rnn(num_words, word2vec, idx2word)
+        self.build_rnn()
 
     def build_cnn(self):
         """ Build the CNN. """
         print("Building the CNN part...")
 
-        if self.cnn_model=='vgg16':
-            self.build_vgg16()
-        else:
-            self.build_resnet152()
+        self.build_resnet152()
 
         print("CNN part built.")
     
-    def build_vgg16(self):
-        """ Build the VGG16 net. """
-        bn = self.params.batch_norm
-
-        imgs = tf.placeholder(tf.float32, [self.batch_size]+self.img_shape)
-        is_train = tf.placeholder(tf.bool)
-
-        #224
-        conv1_1_feats = convolution(imgs, 3, 3, 64, 1, 1, 'conv1_1')
-        conv1_1_feats = batch_norm(conv1_1_feats, 'bn1_1', is_train, bn, 'relu')
-        conv1_2_feats = convolution(conv1_1_feats, 3, 3, 64, 1, 1, 'conv1_2')
-        conv1_2_feats = batch_norm(conv1_2_feats, 'bn1_2', is_train, bn, 'relu')
-        pool1_feats = max_pool(conv1_2_feats, 2, 2, 2, 2, 'pool1')
-
-        #112
-        conv2_1_feats = convolution(pool1_feats, 3, 3, 128, 1, 1, 'conv2_1')
-        conv2_1_feats = batch_norm(conv2_1_feats, 'bn2_1', is_train, bn, 'relu')
-        conv2_2_feats = convolution(conv2_1_feats, 3, 3, 128, 1, 1, 'conv2_2')
-        conv2_2_feats = batch_norm(conv2_2_feats, 'bn2_2', is_train, bn, 'relu')
-        pool2_feats = max_pool(conv2_2_feats, 2, 2, 2, 2, 'pool2')
-
-        #56
-        conv3_1_feats = convolution(pool2_feats, 3, 3, 256, 1, 1, 'conv3_1')
-        conv3_1_feats = batch_norm(conv3_1_feats, 'bn3_1', is_train, bn, 'relu')
-        conv3_2_feats = convolution(conv3_1_feats, 3, 3, 256, 1, 1, 'conv3_2')
-        conv3_2_feats = batch_norm(conv3_2_feats, 'bn3_2', is_train, bn, 'relu')
-        conv3_3_feats = convolution(conv3_2_feats, 3, 3, 256, 1, 1, 'conv3_3')
-        conv3_3_feats = batch_norm(conv3_3_feats, 'bn3_3', is_train, bn, 'relu')
-        pool3_feats = max_pool(conv3_3_feats, 2, 2, 2, 2, 'pool3')
-
-        #28
-        conv4_1_feats = convolution(pool3_feats, 3, 3, 512, 1, 1, 'conv4_1')
-        conv4_1_feats = batch_norm(conv4_1_feats, 'bn4_1', is_train, bn, 'relu')
-        conv4_2_feats = convolution(conv4_1_feats, 3, 3, 512, 1, 1, 'conv4_2')
-        conv4_2_feats = batch_norm(conv4_2_feats, 'bn4_2', is_train, bn, 'relu')
-        conv4_3_feats = convolution(conv4_2_feats, 3, 3, 512, 1, 1, 'conv4_3')
-        conv4_3_feats = batch_norm(conv4_3_feats, 'bn4_3', is_train, bn, 'relu')
-        pool4_feats = max_pool(conv4_3_feats, 2, 2, 2, 2, 'pool4')
-
-        #14
-        conv5_1_feats = convolution(pool4_feats, 3, 3, 512, 1, 1, 'conv5_1')
-        conv5_1_feats = batch_norm(conv5_1_feats, 'bn5_1', is_train, bn, 'relu')
-        conv5_2_feats = convolution(conv5_1_feats, 3, 3, 512, 1, 1, 'conv5_2')
-        conv5_2_feats = batch_norm(conv5_2_feats, 'bn5_2', is_train, bn, 'relu')
-        conv5_3_feats = convolution(conv5_2_feats, 3, 3, 512, 1, 1, 'conv5_3')
-        conv5_3_feats = batch_norm(conv5_3_feats, 'bn5_3', is_train, bn, 'relu')
-
-        #7
-        pool5_feats = max_pool(conv5_3_feats, 2, 2, 2, 2, 'pool5')
-        pool5_feats_flat = tf.reshape(pool5_feats, [self.batch_size, -1])
-
-        pool5_feats_flat.set_shape([self.batch_size, 49*512])
-        fc6_feats = fully_connected(pool5_feats_flat, 4096, 'fc6')
-        fc6_feats = nonlinear(fc6_feats, 'relu')
-        if self.train_cnn:
-            fc6_feats = dropout(fc6_feats, 0.5, is_train)
-
-        fc7_feats = fully_connected(fc6_feats, 4096, 'fc7')
-
-        #conv5_3_feats = batch_size x 14 x 14 x 512
-        conv5_3_feats_flat = tf.reshape(conv5_3_feats, [self.batch_size, 196, 512])
-        self.conv_feats = conv5_3_feats_flat
-        self.conv_feat_shape = [196, 512]
-
-        self.fc_feats = fc7_feats
-        self.fc_feat_shape = [4096]
-
-        self.imgs = imgs
-        self.is_train = is_train
-
     def basic_block(self, input_feats, name1, name2, is_train, bn, c, s=2):
         """ A basic block of ResNets. """
         branch1_feats = convolution_no_bias(input_feats, 1, 1, 4*c, s, s, name1+'_branch1')
@@ -317,7 +248,7 @@ class CaptionGenerator(BaseModel):
         self.imgs = imgs
         self.is_train = is_train
         
-    def build_rnn(self, num_words, word2vec, idx2word):
+    def build_rnn(self):
         """ Build the RNN. """
         print("Building the RNN part...")
 
@@ -353,12 +284,12 @@ class CaptionGenerator(BaseModel):
             self.position_weight = np.exp(-np.array(list(range(max_sent_len)))*0.003)
 
             # initialize the word embedding
-            idx2vec = np.array([word2vec[idx2word[i]] for i in range(num_words)])
-            emb_w = weight('emb_w', [num_words, dim_embed], init_val=idx2vec, group_id=1)
+            idx2vec = np.array([self.word2vec[self.idx2word[i]] for i in range(self.num_words)])
+            emb_w = weight('emb_w', [self.num_words, dim_embed], init_val=idx2vec, group_id=1)
 
             # initialize the decoding layer
-            dec_w = weight('dec_w', [dim_dec, num_words], group_id=1)
-            dec_b = bias('dec_b', [num_words], init_val=0.0)
+            dec_w = weight('dec_w', [dim_dec, self.num_words], group_id=1)
+            dec_b = bias('dec_b', [self.num_words], init_val=0.0)
 
             # compute the mean context
             context_mean = tf.reduce_mean(contexts, 1)
