@@ -22,7 +22,7 @@ def main(argv):
     parser.add_argument('--cnn_model', default='resnet152', help='CNN model to use: Can be vgg16, resnet50, resnet101 or resnet152')
     parser.add_argument('--cnn_model_file', help='Tensorflow model file for the chosen CNN model')
     parser.add_argument('--load_cnn_model', action='store_true', default=True, help='Turn on to load the pretrained CNN model')
-    parser.add_argument('--train_cnn', default=False, help='Turn on to jointly train CNN and RNN. Otherwise, only RNN is trained')
+    parser.add_argument('--train_cnn', action='store_true', default=False, help='Turn on to jointly train CNN and RNN. Otherwise, only RNN is trained')
 
     parser.add_argument('--images_dir', default='./train/images/', help='Directory containing the COCO train2014 images')
     parser.add_argument('--caption_file', default='./train/captions_train2014.json', help='JSON file storing the captions for COCO train2014 images')
