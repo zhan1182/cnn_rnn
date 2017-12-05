@@ -51,35 +51,24 @@ class BaseModel(object):
             for idx in range(train_data.num_batches):
                 batch = train_data.next_batch()
 
+                feed_dict = self.get_feed_dict(batch, is_train=True)
+
                 if self.train_cnn:
                     # Train CNN and RNN
-                    feed_dict = self.get_feed_dict(batch, is_train=True)
                     summary, _, loss0, loss1, global_step = sess.run([merged, 
-                                                                    self.opt_op, 
+                                                                    self.opt_op_cnn_rnn, 
                                                                     self.loss0, 
-                                                                    self.loss1, 
+                                                                    self.loss1_cnn_rnn, 
                                                                     self.global_step], 
                                                                     feed_dict=feed_dict)
-                    train_writer.add_summary(summary, idx)
                 else:
-                    # Train RNN only
-                    img_files, imgs, _, _ = batch
-
-                    if self.init_lstm_with_fc_feats:
-                        contexts, feats = sess.run([self.conv_feats, self.fc_feats], 
-                                                    feed_dict={self.imgs:imgs, self.is_train:False})
-                        feed_dict = self.get_feed_dict(batch, is_train=True, contexts=contexts, feats=feats)
-                    else:
-                        contexts = sess.run(self.conv_feats, feed_dict={self.imgs:imgs, self.is_train:False})
-                        feed_dict = self.get_feed_dict(batch, is_train=True, contexts=contexts)
-
                     summary, _, loss0, loss1, global_step = sess.run([merged, 
-                                                                    self.opt_op, 
+                                                                    self.opt_op_rnn, 
                                                                     self.loss0, 
-                                                                    self.loss1, 
+                                                                    self.loss1_rnn, 
                                                                     self.global_step], 
                                                                     feed_dict=feed_dict)
-                    train_writer.add_summary(summary, idx)
+                train_writer.add_summary(summary, idx)
 
                 print(" Loss0=%f Loss1=%f Batch=%d" %(loss0, loss1, idx))
 
@@ -100,18 +89,10 @@ class BaseModel(object):
         # Generate the captions for the images
         for k in tqdm(list(range(test_data.num_images))):
             batch = test_data.next_batch()
-            img_files, imgs = batch
+            img_files, _ = batch
             img_file = img_files[0]
 
-            if self.train_cnn:
-                feed_dict = self.get_feed_dict(batch, is_train=False)
-            else:
-                if self.init_lstm_with_fc_feats:
-                    contexts, feats = sess.run([self.conv_feats, self.fc_feats], feed_dict={self.imgs:imgs, self.is_train:False})
-                    feed_dict = self.get_feed_dict(batch, is_train=False, contexts=contexts, feats=feats)
-                else:
-                    contexts = sess.run(self.conv_feats, feed_dict={self.imgs:imgs, self.is_train:False})
-                    feed_dict = self.get_feed_dict(batch, is_train=False, contexts=contexts)
+            feed_dict = self.get_feed_dict(batch, is_train=False)
 
             result = sess.run(self.results, feed_dict=feed_dict)
             sentence = test_data.indices_to_sent(result.squeeze())
@@ -267,14 +248,9 @@ class CaptionGenerator(BaseModel):
 
         with tf.variable_scope(tf.get_variable_scope()) as vscope:
 
-            if not self.train_cnn:
-                contexts = tf.placeholder(tf.float32, [batch_size] + self.conv_feat_shape)
-                if self.init_lstm_with_fc_feats:
-                    feats = tf.placeholder(tf.float32, [batch_size] + self.fc_feat_shape)
-            else:
-                contexts = self.conv_feats
-                if self.init_lstm_with_fc_feats:
-                    feats = self.fc_feats
+            contexts = self.conv_feats
+            if self.init_lstm_with_fc_feats:
+                feats = self.fc_feats
 
             sentences = tf.placeholder(tf.int32, [batch_size, max_sent_len])
             masks = tf.placeholder(tf.float32, [batch_size, max_sent_len])
@@ -421,11 +397,13 @@ class CaptionGenerator(BaseModel):
 
             # Compute the final loss
             loss0 = loss0 / tf.reduce_sum(masks)
-            if self.train_cnn:
-                loss1 = params.weight_decay * (tf.add_n(tf.get_collection('l2_0')) + tf.add_n(tf.get_collection('l2_1')))
-            else:
-                loss1 = params.weight_decay * tf.add_n(tf.get_collection('l2_1'))
-            loss = loss0 + loss1
+    
+            loss1_cnn_rnn = params.weight_decay * (tf.add_n(tf.get_collection('l2_0')) + tf.add_n(tf.get_collection('l2_1')))
+
+            loss1_rnn = params.weight_decay * tf.add_n(tf.get_collection('l2_1'))
+
+            loss_cnn_rnn = loss0 + loss1_cnn_rnn
+            loss_rnn = loss0 + loss1_rnn
 
         # Build the solver
         if params.solver == 'adam':
@@ -437,9 +415,21 @@ class CaptionGenerator(BaseModel):
         else:
             solver = tf.train.GradientDescentOptimizer(params.learning_rate)
 
-        tvars = tf.trainable_variables()
-        gs, _ = tf.clip_by_global_norm(tf.gradients(loss, tvars), 3.0)
-        opt_op = solver.apply_gradients(zip(gs, tvars), global_step=self.global_step)
+        tvars_cnn_rnn = tf.trainable_variables()
+        
+        tvars_rnn = tf.trainable_variables(scope='emb_w')
+        tvars_rnn += tf.trainable_variables(scope='dec*')
+        tvars_rnn += tf.trainable_variables(scope='init_lstm*')
+        tvars_rnn += tf.trainable_variables(scope='lstm*')
+        tvars_rnn += tf.trainable_variables(scope='att*')
+        
+        gs_cnn_rnn, _ = tf.clip_by_global_norm(tf.gradients(loss_cnn_rnn, tvars_cnn_rnn), 3.0)
+        gs_rnn, _ = tf.clip_by_global_norm(tf.gradients(loss_rnn, tvars_rnn), 3.0)
+
+        opt_op_cnn_rnn = solver.apply_gradients(zip(gs_cnn_rnn, tvars_cnn_rnn), 
+                                                global_step=self.global_step)
+
+        opt_op_rnn = solver.apply_gradients(zip(gs_rnn, tvars_rnn), global_step=self.global_step)
 
         self.contexts = contexts
         if self.init_lstm_with_fc_feats:
@@ -447,17 +437,21 @@ class CaptionGenerator(BaseModel):
         self.sentences = sentences
         self.masks = masks
 
-        self.loss = loss
+        self.loss_cnn_rnn = loss_cnn_rnn
+        self.loss_rnn = loss_rnn
+        
         self.loss0 = loss0
-        self.loss1 = loss1
-        self.opt_op = opt_op
+
+        self.loss1_cnn_rnn = loss1_cnn_rnn
+        self.loss1_rnn = loss1_rnn
+
+        self.opt_op_cnn_rnn = opt_op_cnn_rnn
+        self.opt_op_rnn = opt_op_rnn
 
         self.results = results
         self.scores = scores
 
-        tf.summary.scalar('loss', loss)
         tf.summary.scalar('loss0', loss0)
-        tf.summary.scalar('loss1', loss1)
 
         print("RNN part built.")
 
@@ -472,27 +466,14 @@ class CaptionGenerator(BaseModel):
                 # masks[i, :] = masks[i, :] * word_weight
                 masks[i, :] = masks[i, :] * self.position_weight
 
-            if self.train_cnn:
-                return {self.imgs: imgs, self.sentences: sentences, self.masks: masks, self.is_train: is_train}
-            else:
-                if self.init_lstm_with_fc_feats:
-                    return {self.contexts: contexts, self.feats: feats, self.sentences: sentences, self.masks: masks, self.is_train: is_train}
-                else:
-                    return {self.contexts: contexts, self.sentences: sentences, self.masks: masks, self.is_train: is_train}
+            return {self.imgs: imgs, self.sentences: sentences, self.masks: masks, self.is_train: is_train}
 
         else:
             # testing or validation phase
             img_files, imgs = batch
             fake_sentences = np.zeros((self.batch_size, self.params.max_sent_len), np.int32)
 
-            if self.train_cnn:
-                return {self.imgs: imgs, self.sentences: fake_sentences, self.is_train: is_train}
-            else:
-                if self.init_lstm_with_fc_feats:
-                    return {self.contexts: contexts, self.feats: feats, self.sentences: fake_sentences, self.is_train: is_train}
-                else:
-                    return {self.contexts: contexts, self.sentences: fake_sentences, self.is_train: is_train}
-
+            return {self.imgs: imgs, self.sentences: fake_sentences, self.is_train: is_train}
 
 
 
