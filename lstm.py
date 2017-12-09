@@ -71,8 +71,6 @@ def main(argv):
 
             print(train_data.num_words)
 
-            return
-
             model = CaptionGenerator(args, 
                                     'train', 
                                     train_data.num_words, 
