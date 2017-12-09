@@ -99,9 +99,15 @@ class DataSet(object):
 
             # Convert the caption into an array of indices in word table
             caption = instance['caption']
+
             word_indices = np.zeros(self.max_sent_len).astype(np.int32)
             mask = np.zeros(self.max_sent_len)
+
+            if self.cut:
+                caption = caption.split()
+                
             words = np.array([self.word2idx[w] for w in caption])
+
             word_indices[:len(words)] = words
             mask[:len(words)] = 1.0
 
@@ -123,6 +129,9 @@ class DataSet(object):
         truncated_caption = caption[:self.max_sent_len]
 
         # Segment the caption using Jieba
+        if self.cut:
+            seg_list = jieba.cut(truncated_caption, cut_all=False)
+            return ' '.join(seg_list)
 
         return truncated_caption
 
@@ -144,7 +153,10 @@ class DataSet(object):
         captions = [d['caption'] for d in self.idx_imagefile_caption.values()]
 
         for caption in captions:
-            # A word is a Chinese character here
+
+            if self.cut:
+                cpation = caption.split()
+
             for word in caption:
                 if word not in self.word2vec:
                     # Why times 0.01 here??
@@ -159,20 +171,6 @@ class DataSet(object):
         if not os.path.exists(self.save_file):
             pickle.dump([self.idx2word, self.word2idx, self.word2vec, self.num_words], 
                 open(self.save_file, 'wb'))
-
-    def symbolize_sent(self, sent):
-        """ Translate a sentence into the indicies of its words. """
-        indices = np.zeros(self.max_sent_len).astype(np.int32)
-        masks = np.zeros(self.max_sent_len)
-
-        if self.cut:
-            sent = jieba.cut(sent, cut_all=False)
-
-        words = np.array([self.word2idx[w] for w in sent])
-
-        indices[:len(words)] = words
-        masks[:len(words)] = 1.0
-        return indices, masks
 
     def indices_to_sent(self, indices):
         """ Translate a vector of indicies into a sentence. """
