@@ -105,7 +105,7 @@ class DataSet(object):
 
             if self.cut:
                 caption = caption.split()
-                
+
             words = np.array([self.word2idx[w] for w in caption])
 
             word_indices[:len(words)] = words
@@ -153,9 +153,8 @@ class DataSet(object):
         captions = [d['caption'] for d in self.idx_imagefile_caption.values()]
 
         for caption in captions:
-
             if self.cut:
-                cpation = caption.split()
+                caption = caption.split()
 
             for word in caption:
                 if word not in self.word2vec:
