@@ -6,10 +6,13 @@ import glob
 
 import cv2
 import numpy as np
+import jieba
 
 class DataSet(object):
 
-    def __init__(self, images_dir, caption_file=None, max_sent_len=30, batch_size=32, save_file='word_table.pickle'):
+    def __init__(self, images_dir, caption_file=None, max_sent_len=30, 
+                batch_size=32, save_file='word_table.pickle', cut=False):
+
         self.images_dir = images_dir
         self.is_train = True if caption_file is not None else False
 
@@ -17,6 +20,8 @@ class DataSet(object):
 
         self.max_sent_len = max_sent_len
         self.batch_size = batch_size if self.is_train else 1
+
+        self.cut = cut
 
         self.scale_shape = np.array([224, 224], np.int32)
 
@@ -49,7 +54,6 @@ class DataSet(object):
         self.ids = list(range(instance_id))
 
         self.num_batches = int(len(self.ids) / self.batch_size)
-
 
     def next_batch(self):
         if self.current_index + self.batch_size > len(self.ids):
@@ -160,7 +164,12 @@ class DataSet(object):
         """ Translate a sentence into the indicies of its words. """
         indices = np.zeros(self.max_sent_len).astype(np.int32)
         masks = np.zeros(self.max_sent_len)
+
+        if self.cut:
+            sent = jieba.cut(sent, cut_all=False)
+
         words = np.array([self.word2idx[w] for w in sent])
+
         indices[:len(words)] = words
         masks[:len(words)] = 1.0
         return indices, masks

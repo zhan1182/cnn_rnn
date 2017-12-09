@@ -51,6 +51,8 @@ def main(argv):
     parser.add_argument('--num_init_layers', type=int, default=2, help='Number of layers in the MLP for initializing the LSTMs')
     parser.add_argument('--init_lstm_with_fc_feats', action='store_true', default=False, help='Turn on to initialize the LSTMs with fc7 feats of VGG16 net. Only useful if VGG16 is used')
 
+    parser.add_argument('--cut', action='store_true', default=False, help='If cut Chinese characters into words')
+
     args = parser.parse_args()
 
     with tf.Session() as sess:    
@@ -61,9 +63,15 @@ def main(argv):
                                 caption_file=args.caption_file, 
                                 max_sent_len=args.max_sent_len, 
                                 batch_size=args.batch_size,
-                                save_file=args.word_table_file)
+                                save_file=args.word_table_file,
+                                cut=args.cut)
+
             train_data.build_word_table(args.dim_embed)
             train_data.reset()
+
+            print(train_data.num_words)
+
+            return
 
             model = CaptionGenerator(args, 
                                     'train', 
