@@ -11,7 +11,7 @@ import jieba
 class DataSet(object):
 
     def __init__(self, images_dir, caption_file=None, max_sent_len=30, 
-                batch_size=32, save_file='word_table.pickle', cut=False):
+                batch_size=32, save_file='word_table.pickle', cut=False, english=False):
 
         self.images_dir = images_dir
         self.is_train = True if caption_file is not None else False
@@ -22,6 +22,7 @@ class DataSet(object):
         self.batch_size = batch_size if self.is_train else 1
 
         self.cut = cut
+        self.english = english
 
         self.scale_shape = np.array([224, 224], np.int32)
 
@@ -103,7 +104,7 @@ class DataSet(object):
             word_indices = np.zeros(self.max_sent_len).astype(np.int32)
             mask = np.zeros(self.max_sent_len)
 
-            if self.cut:
+            if self.cut or self.english:
                 caption = caption.split()
 
             words = np.array([self.word2idx[w] for w in caption])
@@ -126,13 +127,17 @@ class DataSet(object):
 
 
     def process_caption(self, caption):
-        truncated_caption = caption[:self.max_sent_len]
+        if self.english:
+            truncated_caption = ' '.join(caption.split()[:self.max_sent_len - 1] + ['*'])
+        else:
+            truncated_caption = caption[:self.max_sent_len - 1] + '*'
 
-        # Segment the caption using Jieba
-        if self.cut:
-            seg_list = jieba.cut(truncated_caption, cut_all=False)
-            return ' '.join(seg_list)
+            # Segment the caption using Jieba
+            if self.cut:
+                seg_list = jieba.cut(truncated_caption[:-1], cut_all=False)
+                return ' '.join(seg_list) + ' *'
 
+        # Add stop symbol *
         return truncated_caption
 
     def load(self):
@@ -173,7 +178,18 @@ class DataSet(object):
 
     def indices_to_sent(self, indices):
         """ Translate a vector of indicies into a sentence. """
-        words = [self.idx2word[i] for i in indices]
+        words = []
+
+        for i in indices:
+            w = self.idx2word[i] 
+            if w == '*':
+                break
+            words.append(w)
+        
+        if self.english:
+            return ' '.join(words)
+
+        # Exclude the stop symbol
         return ''.join(words)
 
 
