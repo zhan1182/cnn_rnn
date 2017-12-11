@@ -52,6 +52,7 @@ def main(argv):
     parser.add_argument('--init_lstm_with_fc_feats', action='store_true', default=False, help='Turn on to initialize the LSTMs with fc7 feats of VGG16 net. Only useful if VGG16 is used')
 
     parser.add_argument('--cut', action='store_true', default=False, help='If cut Chinese characters into words')
+    parser.add_argument('--english', action='store_true', default=False, help='If training on English')
 
     args = parser.parse_args()
 
@@ -64,7 +65,8 @@ def main(argv):
                                 max_sent_len=args.max_sent_len, 
                                 batch_size=args.batch_size,
                                 save_file=args.word_table_file,
-                                cut=args.cut)
+                                cut=args.cut,
+                                english=args.english)
 
             train_data.build_word_table(args.dim_embed)
             train_data.reset()
