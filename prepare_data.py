@@ -158,7 +158,7 @@ class DataSet(object):
         captions = [d['caption'] for d in self.idx_imagefile_caption.values()]
 
         for caption in captions:
-            if self.cut:
+            if self.cut or self.english:
                 caption = caption.split()
 
             for word in caption:
