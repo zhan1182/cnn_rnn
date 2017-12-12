@@ -89,7 +89,8 @@ def main(argv):
             model.train(sess, train_data)
         else: 
             test_data = DataSet(images_dir=args.images_dir,
-                                save_file=args.word_table_file)
+                                save_file=args.word_table_file, 
+                                english=args.english)
             test_data.load()
 
             model = CaptionGenerator(args, 
