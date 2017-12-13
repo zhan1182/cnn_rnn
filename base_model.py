@@ -47,6 +47,8 @@ class BaseModel(object):
         merged = tf.summary.merge_all()
         train_writer = tf.summary.FileWriter(params.logs_dir + '/train/', sess.graph)
 
+        minimum_valid_loss = 10
+
         for epoch_no in range(num_epochs):
             for idx in range(train_data.num_batches):
                 batch = train_data.next_batch()
