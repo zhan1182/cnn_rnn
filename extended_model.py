@@ -85,9 +85,12 @@ class BaseModel(object):
 
                         valid_feed_dict = self.get_feed_dict(valid_batch, is_train=True)
 
-                        valid_loss0 = sess.run([self.loss0], feed_dict=valid_feed_dict)
+                        valid_loss0, valid_loss1_rnn = sess.run([self.loss0, self.loss1_rnn], 
+                                                                feed_dict=valid_feed_dict)
 
                         valid_loss_list.append(valid_loss0)
+
+                    print(valid_loss_list)
 
                     mean_valid_loss = sum(valid_loss_list) / 30.0
 
