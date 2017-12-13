@@ -77,7 +77,7 @@ def main(argv):
             print(train_data.num_words)
 
             valid_data = DataSet(images_dir=args.valid_images_dir, 
-                                caption_file=args.caption_file, 
+                                caption_file=args.valid_caption_file, 
                                 batch_size=args.batch_size,
                                 save_file=args.word_table_file,
                                 cut=args.cut, 
