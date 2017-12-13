@@ -39,7 +39,7 @@ class BaseModel(object):
     def get_feed_dict(self, batch, is_train, contexts=None, feats=None):
         raise NotImplementedError()
 
-    def train(self, sess, train_data):
+    def train(self, sess, train_data, valid_data):
         """ Train the model. """
         print("Training the model...")
         params = self.params
@@ -47,6 +47,8 @@ class BaseModel(object):
 
         merged = tf.summary.merge_all()
         train_writer = tf.summary.FileWriter(params.logs_dir + '/train/', sess.graph)
+
+        minimum_valid_loss = 10
 
         for epoch_no in range(num_epochs):
             for idx in range(train_data.num_batches):
@@ -73,10 +75,32 @@ class BaseModel(object):
 
                 print(" Loss0=%f Loss1=%f Batch=%d" %(loss0, loss1, idx))
 
-                if (global_step + 1) % params.save_period == 0:
-                    self.save(sess)
+                if idx % 10:
+                    # Calculate the loss on validate data
+                    valid_loss_list = []
+                    valid_data.current_index = 0
+                    for i in range(30):
+                        valid_batch = valid_data.next_batch()
 
-        self.save(sess)
+                        valid_feed_dict = self.get_feed_dict(valid_batch, is_train=True)
+
+                        valid_loss0 = sess.run([self.loss0], feed_dict=valid_feed_dict)
+
+                        valid_loss_list.append(valid_loss0)
+
+                    mean_valid_loss = sum(valid_loss_list) / 30.0
+
+                    print("Mean valid loss = {}".format(mean_valid_loss))
+
+                    if mean_valid_loss > minimum_valid_loss:
+                        break
+                    else:
+                        self.save(sess)
+
+                # if (global_step + 1) % params.save_period == 0:
+                #     self.save(sess)
+
+        # self.save(sess)
 
         print("Training complete.")
 
@@ -93,15 +117,7 @@ class BaseModel(object):
             img_files, imgs = batch
             img_file = img_files[0]
 
-            if self.train_cnn:
-                feed_dict = self.get_feed_dict(batch, is_train=False)
-            else:
-                if self.init_lstm_with_fc_feats:
-                    contexts, feats = sess.run([self.conv_feats, self.fc_feats], feed_dict={self.imgs:imgs, self.is_train:False})
-                    feed_dict = self.get_feed_dict(batch, is_train=False, contexts=contexts, feats=feats)
-                else:
-                    contexts = sess.run(self.conv_feats, feed_dict={self.imgs:imgs, self.is_train:False})
-                    feed_dict = self.get_feed_dict(batch, is_train=False, contexts=contexts)
+            feed_dict = self.get_feed_dict(batch, is_train=False)
 
             result = sess.run(self.results, feed_dict=feed_dict)
             sentence = test_data.indices_to_sent(result.squeeze())

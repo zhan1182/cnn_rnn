@@ -53,6 +53,9 @@ def main(argv):
 
     parser.add_argument('--cut', action='store_true', default=False, help='If cut Chinese characters into words')
     parser.add_argument('--english', action='store_true', default=False, help='If training on English')
+    
+    parser.add_argument('--valid_images_dir', default='./valid/images/', help='Validation images')
+    parser.add_argument('--valid_caption_file', default='./valid/captions.json', help='Validation JSON file')
 
     args = parser.parse_args()
 
@@ -73,6 +76,14 @@ def main(argv):
 
             print(train_data.num_words)
 
+            valid_data = DataSet(images_dir=args.valid_images_dir, 
+                                caption_file=args.caption_file, 
+                                batch_size=args.batch_size,
+                                save_file=args.word_table_file,
+                                cut=args.cut, 
+                                english=args.english)
+            valid_data.load()
+
             model = CaptionGenerator(args, 
                                     'train', 
                                     train_data.num_words, 
@@ -86,12 +97,13 @@ def main(argv):
             elif args.load_cnn_model:
                 model.load2(args.cnn_model_file, sess)
 
-            model.train(sess, train_data)
+            model.train(sess, train_data, valid_data)
         else: 
             test_data = DataSet(images_dir=args.images_dir,
                                 save_file=args.word_table_file, 
                                 english=args.english)
             test_data.load()
+            test_data.reset()
 
             model = CaptionGenerator(args, 
                                     'test', 
