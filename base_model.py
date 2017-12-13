@@ -38,7 +38,7 @@ class BaseModel(object):
     def get_feed_dict(self, batch, is_train, contexts=None, feats=None):
         raise NotImplementedError()
 
-    def train(self, sess, train_data):
+    def train(self, sess, train_data, valid_data):
         """ Train the model. """
         print("Training the model...")
         params = self.params
