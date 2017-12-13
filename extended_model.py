@@ -75,7 +75,7 @@ class BaseModel(object):
 
                 print(" Loss0=%f Loss1=%f Batch=%d" %(loss0, loss1, idx))
 
-                if idx % 2 == 0:
+                if idx > 1500 and idx % 200 == 0:
                     print("Start validation! idx = {}".format(idx))
                     # Calculate the loss on validate data
                     valid_loss_list = []
@@ -89,8 +89,6 @@ class BaseModel(object):
                                                                 feed_dict=valid_feed_dict)
 
                         valid_loss_list.append(valid_loss0)
-
-                    print(valid_loss_list)
 
                     mean_valid_loss = sum(valid_loss_list) / 30.0
 
