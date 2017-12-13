@@ -76,6 +76,7 @@ class BaseModel(object):
                 print(" Loss0=%f Loss1=%f Batch=%d" %(loss0, loss1, idx))
 
                 if idx % 10:
+                    print("Start validation! idx = {}".format(idx))
                     # Calculate the loss on validate data
                     valid_loss_list = []
                     valid_data.current_index = 0
