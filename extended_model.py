@@ -49,6 +49,7 @@ class BaseModel(object):
         train_writer = tf.summary.FileWriter(params.logs_dir + '/train/', sess.graph)
 
         minimum_valid_loss = 10
+        first = True
 
         for epoch_no in range(num_epochs):
             for idx in range(train_data.num_batches):
@@ -95,8 +96,11 @@ class BaseModel(object):
                     print("Mean valid loss = {}".format(mean_valid_loss))
 
                     if mean_valid_loss > minimum_valid_loss:
-                        break
+                        if not first:
+                            break
+                        first = False
                     else:
+                        first = True
                         minimum_valid_loss = mean_valid_loss
                         self.save(sess)
 
