@@ -103,7 +103,6 @@ def main(argv):
                                 save_file=args.word_table_file, 
                                 english=args.english)
             test_data.load()
-            test_data.reset()
 
             model = CaptionGenerator(args, 
                                     'test', 
