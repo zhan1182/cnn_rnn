@@ -72,10 +72,34 @@ class BaseModel(object):
 
                 print(" Loss0=%f Loss1=%f Batch=%d" %(loss0, loss1, idx))
 
-                if (global_step + 1) % params.save_period == 0:
-                    self.save(sess)
+                if idx > 1500 and idx % 200 == 0:
+                    print("Start validation! idx = {}".format(idx))
+                    # Calculate the loss on validate data
+                    valid_loss_list = []
+                    valid_data.current_index = 0
+                    for i in range(30):
+                        valid_batch = valid_data.next_batch()
 
-        self.save(sess)
+                        valid_feed_dict = self.get_feed_dict(valid_batch, is_train=True)
+
+                        valid_loss0, valid_loss1_rnn = sess.run([self.loss0, self.loss1_rnn], 
+                                                                feed_dict=valid_feed_dict)
+
+                        valid_loss_list.append(valid_loss0)
+
+                    mean_valid_loss = sum(valid_loss_list) / 30.0
+
+                    print("Mean valid loss = {}".format(mean_valid_loss))
+
+                    if mean_valid_loss > minimum_valid_loss:
+                        break
+                    else:
+                        self.save(sess)
+
+        #         if (global_step + 1) % params.save_period == 0:
+        #             self.save(sess)
+
+        # self.save(sess)
 
         print("Training complete.")
 
