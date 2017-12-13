@@ -74,8 +74,6 @@ class DataSet(object):
 
             image_file_names.append(image_file_name)
 
-            print(self.images_dir + '/' + image_file_name)
-
             # Load the image
             img = cv2.imread(self.images_dir + '/' + image_file_name)
 
