@@ -6,7 +6,7 @@ import glob
 
 import cv2
 import numpy as np
-import jieba
+import jieba        
 
 class DataSet(object):
 
@@ -107,7 +107,12 @@ class DataSet(object):
             if self.cut or self.english:
                 caption = caption.split()
 
-            words = np.array([self.word2idx[w] for w in caption])
+            word_list = []
+            for w in caption:
+                if w in self.word2idx:
+                    word_list.append(self.word2idx[w])
+
+            words = np.array(word_list)
 
             word_indices[:len(words)] = words
             mask[:len(words)] = 1.0
@@ -191,6 +196,7 @@ class DataSet(object):
 
         # Exclude the stop symbol
         return ''.join(words)
+
 
 
 
