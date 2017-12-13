@@ -96,6 +96,7 @@ class BaseModel(object):
                     if mean_valid_loss > minimum_valid_loss:
                         break
                     else:
+                        minimum_valid_loss = mean_valid_loss
                         self.save(sess)
 
         #         if (global_step + 1) % params.save_period == 0:
