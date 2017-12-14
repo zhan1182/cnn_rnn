@@ -39,7 +39,7 @@ class BaseModel(object):
     def get_feed_dict(self, batch, is_train, contexts=None, feats=None):
         raise NotImplementedError()
 
-    def train(self, sess, train_data, valid_data):
+    def train(self, sess, train_data, valid_data, valid_period=200, valid_num_batches=50):
         """ Train the model. """
         print("Training the model...")
         params = self.params
@@ -76,12 +76,14 @@ class BaseModel(object):
 
                 print(" Loss0=%f Loss1=%f Batch=%d" %(loss0, loss1, idx))
 
-                if idx > 1500 and idx % 200 == 0:
+                if idx > 1500 and idx % valid_period == 0:
                     print("Start validation! idx = {}".format(idx))
                     # Calculate the loss on validate data
                     valid_loss_list = []
-                    valid_data.current_index = 0
-                    for i in range(30):
+                    # valid_data.current_index = 0
+                    valid_data.reset()
+
+                    for i in range(valid_num_batches):
                         valid_batch = valid_data.next_batch()
 
                         valid_feed_dict = self.get_feed_dict(valid_batch, is_train=True)
@@ -91,7 +93,7 @@ class BaseModel(object):
 
                         valid_loss_list.append(valid_loss0)
 
-                    mean_valid_loss = sum(valid_loss_list) / 30.0
+                    mean_valid_loss = sum(valid_loss_list) / float(len(valid_loss_list))
 
                     print("Mean valid loss = {}".format(mean_valid_loss))
 
