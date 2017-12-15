@@ -57,6 +57,9 @@ def main(argv):
     parser.add_argument('--valid_images_dir', default='./valid/images/', help='Validation images')
     parser.add_argument('--valid_caption_file', default='./valid/captions.json', help='Validation JSON file')
 
+    parser.add_argument('--valid_period', type=int, default=200, help='The number of batches per validation')
+    parser.add_argument('--valid_num_batches', type=int, default=50, help='The number of batches for each validation')
+
     args = parser.parse_args()
 
     with tf.Session() as sess:    
@@ -97,7 +100,8 @@ def main(argv):
             elif args.load_cnn_model:
                 model.load2(args.cnn_model_file, sess)
 
-            model.train(sess, train_data, valid_data)
+            model.train(sess, train_data, valid_data,
+                        args.valid_period, args.valid_num_batches)
         else: 
             test_data = DataSet(images_dir=args.images_dir,
                                 save_file=args.word_table_file,
